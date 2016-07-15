@@ -36,9 +36,15 @@ for dirs , root , files in os.walk(path):
 
             browser.get(full_comment_url)
             time.sleep(0.2)
-
-            elem = browser.find_element_by_tag_name("body")
-
+            lastHeight = browser.execute_script("return document.body.scrollHeight")
+            while True:
+                browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                time.sleep(0.5)
+                newHeight = browser.execute_script("return document.body.scrollHeight")
+                if newHeight == lastHeight:
+                    break
+                lastHeight = newHeight
+            '''
             no_of_pagedown = 200
 
             while no_of_pagedown:
@@ -46,6 +52,7 @@ for dirs , root , files in os.walk(path):
                 time.sleep(0.1)
                 no_of_pagedown -= 1
 
+            '''
             post_elems = browser.find_elements_by_class_name("CommentEntry_content_1ATrw")
 
             for comment in post_elems:
