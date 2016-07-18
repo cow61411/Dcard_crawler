@@ -23,48 +23,51 @@ class crawler(threading.Thread):
         #self.filename = filename
 
     def run(self):
-        post_count = 1
-        pooldata = threadpool.get()
-        data = pooldata[0]
-        filename = pooldata[1]
-        out = codecs.open(filename[:-4] , 'w' , 'utf8')
-        length = len(data)
-        for num in data:
-            browser = webdriver.Chrome()
-            commemt_count = 1
+        try:
+            post_count = 1
+            pooldata = threadpool.get()
+            data = pooldata[0]
+            filename = pooldata[1]
+            out = codecs.open(filename[:-4] , 'w' , 'utf8')
+            length = len(data)
+            for num in data:
+                browser = webdriver.Chrome()
+                commemt_count = 1
 
-            full_content_url = self.content_url + str(num).strip("\n")
-            full_comment_url = self.first_comment_url + filename[:-4] + self.second_comment_url + str(num).strip("\n")
-            #print full_content_url
-            #print full_comment_url
-            print "Crawling forum \"%s\" %d/%d post" % (filename[:-4] , post_count , length)
-            res = requests.get(full_content_url)
-            content = json.loads(res.text)
+                full_content_url = self.content_url + str(num).strip("\n")
+                full_comment_url = self.first_comment_url + filename[:-4] + self.second_comment_url + str(num).strip("\n")
+                #print full_content_url
+                #print full_comment_url
+                print "Crawling forum \"%s\" %d/%d post" % (filename[:-4] , post_count , length)
+                res = requests.get(full_content_url)
+                content = json.loads(res.text)
 
-            out.write("POST %d:\n" % post_count)
-            post_count += 1
-            if content.has_key('content'):
-                out.write(content['content'] + "\n")
+                out.write("POST %d:\n" % post_count)
+                post_count += 1
+                if content.has_key('content'):
+                    out.write(content['content'] + "\n")
 
-            browser.get(full_comment_url)
-            time.sleep(0.2)
-            lastHeight = browser.execute_script("return document.body.scrollHeight")
-            while True:
-                browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(0.5)
-                newHeight = browser.execute_script("return document.body.scrollHeight")
-                if newHeight == lastHeight:
-                    break
-                lastHeight = newHeight
-            post_elems = browser.find_elements_by_class_name("CommentEntry_content_1ATrw")
+                browser.get(full_comment_url)
+                time.sleep(0.2)
+                lastHeight = browser.execute_script("return document.body.scrollHeight")
+                while True:
+                    browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                    time.sleep(0.5)
+                    newHeight = browser.execute_script("return document.body.scrollHeight")
+                    if newHeight == lastHeight:
+                        break
+                    lastHeight = newHeight
+                post_elems = browser.find_elements_by_class_name("CommentEntry_content_1ATrw")
 
-            for comment in post_elems:
-                out.write("REPLY %d:\n" % commemt_count)
-                out.write(comment.text + "\n")
-                commemt_count += 1
+                for comment in post_elems:
+                    out.write("REPLY %d:\n" % commemt_count)
+                    out.write(comment.text + "\n")
+                    commemt_count += 1
 
-            browser.close()
-        threadpool.task_done()
+                browser.close()
+            threadpool.task_done()
+        except:
+            pass
 
 
 if __name__ == "__main__":
