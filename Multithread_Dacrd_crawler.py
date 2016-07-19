@@ -3,6 +3,7 @@ import time
 import json
 import requests
 import os
+import os.path
 import codecs
 import threading
 import sys
@@ -23,14 +24,14 @@ class crawler(threading.Thread):
         #self.filename = filename
 
     def run(self):
-        try:
-            post_count = 1
-            pooldata = threadpool.get()
-            data = pooldata[0]
-            filename = pooldata[1]
-            out = codecs.open(filename[:-4] , 'w' , 'utf8')
-            length = len(data)
-            for num in data:
+        post_count = 1
+        pooldata = threadpool.get()
+        data = pooldata[0]
+        filename = pooldata[1]
+        out = codecs.open(filename[:-4] , 'w' , 'utf8')
+        length = len(data)
+        for num in data:
+            try:
                 browser = webdriver.Chrome()
                 commemt_count = 1
 
@@ -65,20 +66,34 @@ class crawler(threading.Thread):
                     commemt_count += 1
 
                 browser.close()
-            threadpool.task_done()
+                threadpool.task_done()
         except:
-            pass
+            continue
 
+
+def get_files_num(files):
+    result = dict()
+    for filename in files :
+        if os.path.isfile(filename[:-4]):
+            for line in open(filename[:-4] , 'r'):
+                if line.find('POST:')!= -1:
+                    num = int(line[5 : -1])
+            result[filename[:-4]] = num
+        else:
+            result[filename[:-4]] = 0
 
 if __name__ == "__main__":
     threads = []
     path = './ids/'
     count = 1
+    files = []
     threadpool = Queue.Queue(0)
     for dirs , root , files in os.walk(path):
         for filename in files:
             #if count < 10:
             #for i in xrange(10):
+            #files = []
+            files.append(filename)
             temp = []
             data =  open(path + filename , 'r').readlines()
             temp.append(data)
@@ -89,9 +104,11 @@ if __name__ == "__main__":
                 #threads.append(thread)
             #count += 1
             #print filename
+    postnum = get_files_num(files)
+    print postnum
     for i in xrange(10):
         thread = crawler('./ids/' , filename) 
-        thread.start()
+        #thread.start()
         threads.append(thread)
 
 
